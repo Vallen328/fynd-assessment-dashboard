@@ -18,9 +18,19 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="AI Feedback System API", version="1.0.0")
 
 # Configure CORS
+cors_origins = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "https://fynd-assessment-dashboard-rfju-e84yijwfl.vercel.app",
+]
+
+# Add FRONTEND_URL from env if set
+if FRONTEND_URL and FRONTEND_URL not in cors_origins:
+    cors_origins.append(FRONTEND_URL)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_URL, "http://localhost:3000", "http://localhost:3001"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
