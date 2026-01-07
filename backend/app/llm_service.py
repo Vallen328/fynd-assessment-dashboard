@@ -6,11 +6,29 @@ logger = logging.getLogger(__name__)
 
 class LLMService:
     def __init__(self):
-        self.client = genai.Client(api_key=GOOGLE_GEMINI_API_KEY)
+        self.api_key = GOOGLE_GEMINI_API_KEY
+        self.client = None
         self.model = "gemini-2.5-flash"
+        
+        # Only initialize client if API key is provided
+        if self.api_key:
+            try:
+                self.client = genai.Client(api_key=self.api_key)
+            except Exception as e:
+                logger.warning(f"Failed to initialize Gemini client: {e}. Using fallback responses.")
+                self.client = None
 
     def generate_user_response(self, rating: int, review: str) -> str:
         """Generate a user-facing AI response to the review"""
+        if not self.client:
+            # Fallback response when API key is not available
+            if rating >= 4:
+                return "Thank you for your positive feedback! We're delighted that you're satisfied with our service. Your kind words motivate us to continue delivering excellence."
+            elif rating == 3:
+                return "Thank you for your feedback. We appreciate your insights and will use them to improve our service. Please let us know if there's anything we can do to enhance your experience."
+            else:
+                return "Thank you for bringing this to our attention. We sincerely apologize for your experience and would love the opportunity to make things right. Please reach out to our support team directly."
+        
         try:
             prompt = f"""You are a helpful customer service AI. A user has submitted the following feedback:
 
@@ -37,6 +55,12 @@ If the review is negative, offer to help resolve the issue. If positive, thank t
 
     def generate_summary(self, review: str) -> str:
         """Generate a summary of the review for admin dashboard"""
+        if not self.client:
+            # Fallback: create a simple summary from review
+            if len(review) > 100:
+                return review[:100] + "..."
+            return review
+        
         try:
             prompt = f"""Summarize the following customer review in 1-2 sentences for internal use:
 
@@ -61,6 +85,15 @@ Provide a concise summary that captures the main points."""
 
     def generate_recommended_actions(self, rating: int, review: str) -> str:
         """Generate recommended actions for admin to take"""
+        if not self.client:
+            # Fallback recommendations based on rating
+            if rating >= 5:
+                return "Document as positive case study and consider for testimonial"
+            elif rating >= 3:
+                return "Review feedback and identify improvement areas"
+            else:
+                return "Escalate to management and prioritize for resolution"
+        
         try:
             prompt = f"""Based on the following customer review, suggest 1-2 recommended actions for the support team:
 
